@@ -1,4 +1,4 @@
-import { ethers, parseEther } from 'ethers';
+import {ethers, parseEther, parseUnits} from 'ethers';
 
 import { provider } from 'ganache';
 import { BigNumber } from '@ethersproject/bignumber';
@@ -131,3 +131,4 @@ export class Simulator {
 		return result;
 	}
 }
+

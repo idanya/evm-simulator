@@ -1,4 +1,4 @@
-import { ethers, parseEther, parseUnits } from 'ethers';
+import { ethers, parseEther } from 'ethers';
 
 import { provider } from 'ganache';
 import { BigNumber } from '@ethersproject/bignumber';
@@ -26,8 +26,6 @@ export class Simulator {
 			to: input.to,
 			value: parseEther(input.value),
 			data: input.data,
-			gasLimit: 400_000,
-			gasPrice: parseUnits('35', 9),
 		};
 
 		const txResult = await signer.sendTransaction(txToSend);

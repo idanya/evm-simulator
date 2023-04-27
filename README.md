@@ -9,6 +9,7 @@ A simulated transaction can be done from any to any address without needing the 
 ## Quick start
 ```shell
 npm i -g evm-simulator
+
 evm-simulator --help
 ```
 

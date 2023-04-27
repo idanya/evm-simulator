@@ -34,7 +34,7 @@ jobs:
           echo $tag
           git remote update
           git fetch
-          git checkout --track origin/master
+          git checkout --track origin/main
           git config --global user.email "github-actions@github.com"
           git config --global user.name "Github Actions"
           npm --no-git-tag-version --allow-same-version version $tag

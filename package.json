@@ -15,6 +15,7 @@
   "scripts": {
     "ci": "yarn install --frozen-lockfile",
     "prebuild": "rimraf dist",
+    "prepublish": "yarn run build",
     "build": "tsc",
     "format": "prettier ./src --write",
     "format:check": "prettier ./src --check",

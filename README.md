@@ -6,6 +6,12 @@ This is done by running a local "soft" fork or any EVM chain and sending the tra
 
 A simulated transaction can be done from any to any address without needing the source EOA keys.
 
+## Quick start
+```shell
+npm i -g evm-simulator
+evm-simulator --help
+```
+
 ## Simulation flow
 EVM Simulator is using Ganache to run a local fork of the EVM chain.
 It then, unlocks the source EOA and sends the transaction to the local fork. 

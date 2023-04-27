@@ -7,7 +7,6 @@ export interface ChainForkDefinition {
 export interface SimulationInput {
 	from: string;
 	to: string;
-	chain: ChainForkDefinition;
 	data: string;
 	value: string;
 }

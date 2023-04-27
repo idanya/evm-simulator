@@ -1,6 +1,7 @@
 import { Command } from 'commander';
-import { SimulationInput } from './entities/simulation-input';
+import { ChainForkDefinition, SimulationInput } from './entities/simulation-input';
 import { Simulator } from './simulator';
+import { GanacheEVMProvider } from './evm/ganache-evm-provider';
 
 const program = new Command();
 
@@ -18,20 +19,21 @@ program
 
 const options = program.opts();
 
+const chainDef: ChainForkDefinition = {
+	chainNumber: parseInt(options.chain),
+	rpcUrl: options.rpc,
+	blockHeight: options.blockheight ? parseInt(options.blockheight) : 'latest',
+};
+
 const input: SimulationInput = {
 	from: options.from,
 	to: options.to,
-	chain: {
-		chainNumber: parseInt(options.chain),
-		rpcUrl: options.rpc,
-		blockHeight: options.blockheight ? parseInt(options.blockheight) : 'latest',
-	},
 	data: options.data,
 	value: options.value,
 };
 
-const simulator = new Simulator();
-simulator
+const localEVMProvider = new GanacheEVMProvider(chainDef);
+new Simulator(localEVMProvider)
 	.simulate(input)
 	.then(result => {
 		console.log(JSON.stringify(result, undefined, 2));

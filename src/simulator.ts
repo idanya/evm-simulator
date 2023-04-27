@@ -1,24 +1,18 @@
 import { ethers, parseEther } from 'ethers';
-
-import { provider } from 'ganache';
 import { BigNumber } from '@ethersproject/bignumber';
-import { JsonRpcSigner, TransactionResponse, Web3Provider } from '@ethersproject/providers';
+import { TransactionResponse } from '@ethersproject/providers';
 import { SimulationResult } from './entities/simulation-result';
 import { TransferEvent } from './entities/transfer-event';
-import { ChainForkDefinition, SimulationInput } from './entities/simulation-input';
-import { ReceiptEventDecoder } from './receipt-event-decoder';
+import { SimulationInput } from './entities/simulation-input';
+import { EventDecoder } from './event-decoder';
 import { Log } from '@ethersproject/abstract-provider/src.ts';
-
-interface StructLog {
-	op: string;
-	depth: number;
-	stack: string[];
-}
+import { LocalEVMProvider } from './evm/local-evm-provider';
 
 export class Simulator {
+	constructor(private readonly evmProvider: LocalEVMProvider) {}
+
 	public async simulate(input: SimulationInput): Promise<SimulationResult> {
-		const provider = this.getProvider(input.chain);
-		const signer = await this.getAccountSigner(provider, input.from);
+		const signer = await this.evmProvider.getAccountSigner(input.from);
 
 		const txToSend = {
 			from: input.from,
@@ -28,22 +22,18 @@ export class Simulator {
 		};
 
 		const txResult = await signer.sendTransaction(txToSend);
-
-		return this.processTransactionResponse(provider, txResult);
+		return this.processTransactionResponse(txResult);
 	}
 
-	private async processTransactionResponse(
-		provider: Web3Provider,
-		txResponse: TransactionResponse,
-	): Promise<SimulationResult> {
+	private async processTransactionResponse(txResponse: TransactionResponse): Promise<SimulationResult> {
 		const baseAssetTransfer: TransferEvent = {
 			from: ethers.getAddress(txResponse.from),
 			to: ethers.getAddress(txResponse.to),
 			value: BigNumber.from(txResponse.value).toString(),
 		};
 
-		const internalTransfers = await this.traceTransaction(provider, txResponse.hash, txResponse.to);
-		const receipt = await provider.getTransactionReceipt(txResponse.hash);
+		const internalTransfers = await this.evmProvider.extractInternalTransfers(txResponse.hash, txResponse.to);
+		const receipt = await this.evmProvider.getTransactionReceipt(txResponse.hash);
 
 		return {
 			internalTransfers,
@@ -60,70 +50,13 @@ export class Simulator {
 	private async decodeLogs(logs: Log[]): Promise<object[]> {
 		const decoded: object[] = [];
 		for (const log of logs) {
-			const topicDecoder = new ReceiptEventDecoder(log.topics, log.data);
-			const decodedLog = await topicDecoder.decodeTopic();
+			const eventDecoder = new EventDecoder(log.topics, log.data);
+			const decodedLog = await eventDecoder.decode();
 			if (decodedLog) {
 				decoded.push(decodedLog);
 			}
 		}
 
 		return decoded;
-	}
-
-	private async traceTransaction(
-		provider: Web3Provider,
-		txHash: string,
-		toAddress: string,
-	): Promise<TransferEvent[]> {
-		const txTrace = await provider.send('debug_traceTransaction', [txHash, {}]);
-		return this.getInternalTransfers(txTrace.structLogs, toAddress);
-	}
-
-	private getProvider(chainForkDefinition: ChainForkDefinition): Web3Provider {
-		const ganacheProvider = provider({
-			chain: {
-				chainId: chainForkDefinition.chainNumber,
-			},
-			fork: {
-				url: chainForkDefinition.rpcUrl,
-				blockNumber: chainForkDefinition.blockHeight,
-			},
-		});
-
-		return new Web3Provider(ganacheProvider);
-	}
-
-	private async getAccountSigner(provider: Web3Provider, address: string): Promise<JsonRpcSigner> {
-		await provider.send('evm_addAccount', [address, 'password']);
-		await provider.send('personal_unlockAccount', [address, 'password']);
-		return provider.getSigner(address);
-	}
-
-	private getInternalTransfers(structLogs: StructLog[], initialFrom: string): TransferEvent[] {
-		const sourceInDepth = {
-			1: initialFrom,
-		};
-
-		const result: TransferEvent[] = [];
-		for (let i = 0; i < structLogs.length; i++) {
-			const log = structLogs[i];
-			if (log.op === 'DELEGATECALL') {
-				// keep the same source
-				sourceInDepth[log.depth + 1] = sourceInDepth[log.depth];
-			} else if (log.op === 'CALL') {
-				const to = log.stack[log.stack.length - 2];
-				const value = log.stack[log.stack.length - 3];
-				const from = sourceInDepth[log.depth];
-
-				const numValue = BigNumber.from(`0x${value}`);
-				if (!numValue.isZero()) {
-					result.push({ from, to, value: numValue.toString() });
-				}
-
-				sourceInDepth[log.depth + 1] = to;
-			}
-		}
-
-		return result;
 	}
 }

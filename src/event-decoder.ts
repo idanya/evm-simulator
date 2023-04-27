@@ -1,26 +1,12 @@
 import { concat, ethers } from 'ethers';
 
 import axios from 'axios';
+import { OpenChainResponse } from './entities/openchain';
 
-interface OpenChainEntry {
-	name: string;
-	filter: boolean;
-}
-
-interface OpenChainResult {
-	event?: Record<string, Array<OpenChainEntry>>;
-	function?: Record<string, Array<OpenChainEntry>>;
-}
-
-interface OpenChainResponse {
-	ok: boolean;
-	result: OpenChainResult;
-}
-
-export class ReceiptEventDecoder {
+export class EventDecoder {
 	constructor(private readonly topics: string[], private readonly data: string) {}
 
-	public async decodeTopic(): Promise<object> {
+	public async decode(): Promise<object> {
 		try {
 			const eventSignature = await this.fetchTopic(this.topics[0]);
 			const decoded = this.decodeEvent(eventSignature);

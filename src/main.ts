@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 import { Command } from 'commander';
 import { ChainForkDefinition, SimulationInput } from './entities/simulation-input';
 import { Simulator } from './simulator';

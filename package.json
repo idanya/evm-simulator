@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "author": "Idan Yael",
-  "private": true,
   "license": "MIT",
+  "main": "dist/src/main.js",
+  "bin": {
+    "evm-simulator": "./dist/src/main.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/idanya/evm-simulator"

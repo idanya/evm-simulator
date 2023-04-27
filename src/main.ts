@@ -24,7 +24,7 @@ const input: SimulationInput = {
 	chain: {
 		chainNumber: parseInt(options.chain),
 		rpcUrl: options.rpc,
-		blockHeight: options.blockHeight ? parseInt(options.blockheight) : 'latest',
+		blockHeight: options.blockheight ? parseInt(options.blockheight) : 'latest',
 	},
 	data: options.data,
 	value: options.value,

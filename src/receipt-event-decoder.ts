@@ -1,48 +1,64 @@
-import { ethers } from 'ethers';
+import { concat, ethers } from 'ethers';
 
-import { DecodedTransferEvent } from './decoded-transfer-event';
+import axios from 'axios';
 
-enum EventType {
-	Transfer = 'Transfer',
+interface OpenChainEntry {
+	name: string;
+	filter: boolean;
 }
 
-// TODO: add more topics or decode using 4bytes (no param names)
-const TOPICS = {
-	'0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef': EventType.Transfer, // Transfer(address,address,uint256)
-};
+interface OpenChainResult {
+	event?: Record<string, Array<OpenChainEntry>>;
+	function?: Record<string, Array<OpenChainEntry>>;
+}
+
+interface OpenChainResponse {
+	ok: boolean;
+	result: OpenChainResult;
+}
 
 export class ReceiptEventDecoder {
-	constructor(private readonly address: string, private readonly topics: string[], private readonly data: string) {}
-	public decodeTopic(): DecodedTransferEvent {
-		try {
-			if (!(this.topics[0] in TOPICS)) {
-				return;
-			}
+	constructor(private readonly topics: string[], private readonly data: string) {}
 
-			const eventType = TOPICS[this.topics[0]];
-			switch (eventType) {
-				case EventType.Transfer:
-					return this.decodeTransferEvent();
-				default:
-			}
+	public async decodeTopic(): Promise<object> {
+		try {
+			const eventSignature = await this.fetchTopic(this.topics[0]);
+			const decoded = this.decodeEvent(eventSignature);
+
+			return {
+				event: eventSignature,
+				params: decoded.toArray().map(v => v.toString()),
+			};
 		} catch (e) {
-			/* empty */
+			console.error(e);
 		}
 	}
 
-	private decodeTransferEvent(): DecodedTransferEvent {
-		const eventInterface = new ethers.Interface([
-			'event Transfer(address indexed from, address indexed to, uint256 value)',
-		]);
+	private async fetchTopic(event: string): Promise<string | undefined> {
+		try {
+			const response = await axios.get<OpenChainResponse>(
+				`https://api.openchain.xyz/signature-database/v1/lookup?filter=false&event=${event}`,
+			);
+			if (!response.data.ok || !response.data.result.event) {
+				return;
+			}
 
-		const decodedEvent = eventInterface.decodeEventLog('Transfer', this.data, this.topics);
+			const matches = response.data.result.event[event];
+			if (matches.length > 0) {
+				return matches[0].name;
+			}
+		} catch (e) {
+			return undefined;
+		}
+	}
 
-		const token = ethers.getAddress(this.address);
-		return {
-			token,
-			from: decodedEvent.from,
-			to: decodedEvent.to,
-			value: decodedEvent.value.toString(),
-		};
+	private decodeEvent(eventSignature: string) {
+		const eventInterface = new ethers.Interface([`event ${eventSignature}`]);
+
+		const funcName = eventSignature.substring(0, eventSignature.indexOf('('));
+		const completeData = concat([...this.topics.splice(1), this.data]);
+
+		const inputParams = eventInterface.getEvent(funcName).inputs.map(input => input.type);
+		return ethers.AbiCoder.defaultAbiCoder().decode(inputParams, completeData);
 	}
 }

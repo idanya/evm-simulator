@@ -1,4 +1,4 @@
-import {ethers, parseEther, parseUnits} from 'ethers';
+import { ethers, parseEther } from 'ethers';
 
 import { provider } from 'ganache';
 import { BigNumber } from '@ethersproject/bignumber';
@@ -6,7 +6,6 @@ import { JsonRpcSigner, TransactionResponse, Web3Provider } from '@ethersproject
 import { SimulationResult } from './entities/simulation-result';
 import { TransferEvent } from './entities/transfer-event';
 import { ChainForkDefinition, SimulationInput } from './entities/simulation-input';
-import { DecodedTransferEvent } from './decoded-transfer-event';
 import { ReceiptEventDecoder } from './receipt-event-decoder';
 import { Log } from '@ethersproject/abstract-provider/src.ts';
 
@@ -49,23 +48,20 @@ export class Simulator {
 		return {
 			internalTransfers,
 			baseAssetTransfer,
-			receipt: {
-				from: receipt.from,
-				to: receipt.to,
-				contractAddress: receipt.contractAddress,
-				logs: await this.decodeLogs(receipt.logs),
-				gasUsed: receipt.gasUsed,
-				cumulativeGasUsed: receipt.cumulativeGasUsed,
-				effectiveGasPrice: receipt.effectiveGasPrice,
-			},
+			from: receipt.from,
+			to: receipt.to,
+			gasUsed: receipt.gasUsed,
+			cumulativeGasUsed: receipt.cumulativeGasUsed,
+			effectiveGasPrice: receipt.effectiveGasPrice,
+			logs: await this.decodeLogs(receipt.logs),
 		};
 	}
 
-	private async decodeLogs(logs: Log[]): Promise<DecodedTransferEvent[]> {
-		const decoded: DecodedTransferEvent[] = [];
+	private async decodeLogs(logs: Log[]): Promise<object[]> {
+		const decoded: object[] = [];
 		for (const log of logs) {
-			const topicDecoder = new ReceiptEventDecoder(log.address, log.topics, log.data);
-			const decodedLog = topicDecoder.decodeTopic();
+			const topicDecoder = new ReceiptEventDecoder(log.topics, log.data);
+			const decodedLog = await topicDecoder.decodeTopic();
 			if (decodedLog) {
 				decoded.push(decodedLog);
 			}
@@ -131,4 +127,3 @@ export class Simulator {
 		return result;
 	}
 }
-

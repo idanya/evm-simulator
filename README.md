@@ -1,7 +1,8 @@
 # EVM Simulator
 
 ## Abstract
-EVM Simulator is a tool to simulate EVM blockchain transactions without sending them to the network. This is done by running a local "soft" fork or any EVM chain and sending the transaction locally to process its logs and the executed opcodes.
+EVM Simulator is a tool to simulate EVM blockchain transactions without sending them to the network. 
+This is done by running a local "soft" fork of any EVM chain and sending the transaction locally to process its logs and the executed opcodes.
 
 A simulated transaction can be done from any to any address without needing the source EOA keys.
 

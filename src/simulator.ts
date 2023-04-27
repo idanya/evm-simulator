@@ -43,7 +43,7 @@ export class Simulator {
 			gasUsed: receipt.gasUsed,
 			cumulativeGasUsed: receipt.cumulativeGasUsed,
 			effectiveGasPrice: receipt.effectiveGasPrice,
-			logs: await this.decodeLogs(receipt.logs),
+			logs: receipt.logs.length > 0 ? await this.decodeLogs(receipt.logs) : [],
 		};
 	}
 

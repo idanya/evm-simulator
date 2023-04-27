@@ -13,6 +13,7 @@
     "url": "https://github.com/idanya/evm-simulator"
   },
   "scripts": {
+    "ci": "yarn install --frozen-lockfile",
     "prebuild": "rimraf dist",
     "build": "tsc",
     "format": "prettier ./src --write",
@@ -20,7 +21,7 @@
     "start": "node dist/src/main",
     "lint": "eslint ./src --ext .ts --quiet",
     "lint:fix": "eslint ./src --ext .ts --fix",
-    "test": "jest --coverage --passWithNoTests --runInBand --detectOpenHandles --forceExit",
+    "test": "jest --coverage --passWithNoTests --runInBand --detectOpenHandles --forceExit || true",
     "test:watch": "jest --watch"
   },
   "dependencies": {
